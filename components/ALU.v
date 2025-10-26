@@ -48,4 +48,7 @@ always (*)
         default: result = 32'b0;
     endcase
     end    
+
+assign zero_flag = (result == 0);
+
 endmodule
