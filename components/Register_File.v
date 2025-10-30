@@ -1,4 +1,4 @@
-module moduleName #(
+module Register_File #(
     parameter data_width = 32,
     parameter address_bits = 5,
     parameter total_regs = 32
