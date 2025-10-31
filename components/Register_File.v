@@ -1,6 +1,6 @@
 module Register_File #(
     parameter data_width = 32,
-    parameter address_bits = 5,
+    parameter reg_width = 5,
     parameter total_regs = 32
 
 ) (
@@ -8,9 +8,9 @@ module Register_File #(
     input clk,
     input write_enable,
     // Addresses
-    input [address_bits-1:0] read_addr_1,
-    input [address_bits-1:0] read_addr_2,
-    input [address_bits-1:0] write_addr,
+    input [reg_width-1:0] read_addr_1,
+    input [reg_width-1:0] read_addr_2,
+    input [reg_width-1:0] write_addr,
     // Data
     input [data_width-1:0] write_reg_data,
     
