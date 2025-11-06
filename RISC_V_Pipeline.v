@@ -88,20 +88,42 @@ module RISC_V_Pipeline #(
     wire [6:0] EX_funct7;
     wire [2:0] EX_funct3;    
 
+    // Execution Stage Output
+    wire [data_width-1:0] EX_alu_result;
+    wire [data_width-1:0] EX_write_data;
+    wire EX_zero_flag;
+    wire EX_branch_taken;
+    wire [address_width-1:0] EX_branch_target;
+
+    // EX_MEM to ALU Forwarding Unit Outputs
+    wire [1:0] forward_A;
+    wire [1:0] forward_B;
+
+    // EX/MEM Register Outputs
+    wire MEM_mem_read;
+    wire MEM_mem_write;
+    wire MEM_mem_to_reg;
+    wire MEM_reg_write;
+    wire [data_width-1:0] MEM_alu_result;
+    wire [data_width-1:0] MEM_write_data;
+    wire [reg_addr_width-1:0] MEM_rd;
+    wire [address_width-1:0] MEM_pc_plus_4;
+    wire MEM_zero_flag;
+    
     // TEMP ------------- TODO LATER
+    wire ex_mem_flush;
+    assign ex_mem_flush = EX_branch_taken;  
+
     wire wb_reg_write;
     wire [reg_addr_width-1:0] wb_write_addr;
     wire [data_width-1:0] wb_write_data;
-    assign if_id_flush = 1'b0;
-    assign id_ex_flush = 1'b0;
-    assign pc_src = 1'b0;
-    assign branch_target = {address_width{1'b0}};
+    assign if_id_flush = EX_branch_taken;
+    assign id_ex_flush = EX_branch_taken;
+    assign pc_src = EX_branch_taken;
+    assign branch_target = EX_branch_target;
     assign wb_reg_write = 1'b0;
     assign wb_write_addr = {reg_addr_width{1'b0}};
     assign wb_write_data = {data_width{1'b0}};
-
-    // Execution Stage Output
-    wire ex_branch_taken;
 
     // Memory Stage Output
 
@@ -247,25 +269,76 @@ module RISC_V_Pipeline #(
 
     // ----------------- EXECUTION STAGE -----------------
     Execute_Stage #(
-       .data_width(data_width),               
-       .address_width(address_width),         
-       .reg_addr_width(reg_addr_width),       
-       .total_regs(total_regs)     
+        .data_width(data_width),
+        .address_width(address_width),
+        .reg_addr_width(reg_addr_width)
     ) execute (
-        // Inputs
+        // Control signals
+        .alu_src(EX_alu_src),
+        .alu_op(EX_alu_op),
+        .branch(EX_branch),
         
-
-
+        // Data inputs
+        .read_data_1(EX_read_data_1),
+        .read_data_2(EX_read_data_2),
+        .rs1(EX_rs1),
+        .rs2(EX_rs2),
+        .immediate(EX_immediate),
+        .pc_current(EX_pc_current),
+        .funct7(EX_funct7),
+        .funct3(EX_funct3),
+        
+        // Forwarding inputs from MEM stage
+        .MEM_rd(MEM_rd),
+        .MEM_reg_write(MEM_reg_write),
+        .MEM_alu_result(MEM_alu_result),
+        
+        // Forwarding inputs from WB stage
+        .WB_rd(wb_write_addr),
+        .WB_reg_write(wb_reg_write),
+        .WB_write_data(wb_write_data),
+        
         // Outputs
-
+        .alu_result(EX_alu_result),
+        .write_data(EX_write_data),
+        .zero_flag(EX_zero_flag),
+        .branch_taken(EX_branch_taken),
+        .branch_target(EX_branch_target)
     );
 
-    // ----------------- EX/MEM PIPELINE REGISTER -----------------
-
-    EX_MEM_Register  #(
-        
+// ----------------- EX/MEM PIPELINE REGISTER -----------------
+    EX_MEM_Register #(
+        .data_width(data_width),
+        .address_width(address_width),
+        .reg_addr_width(reg_addr_width)
     ) ex_mem_reg (
-
+        .clk(clk),
+        .reset(reset),
+        .flush(ex_mem_flush),
+        
+        // Control signals from Execute
+        .EX_mem_read(EX_mem_read),
+        .EX_mem_write(EX_mem_write),
+        .EX_mem_to_reg(EX_mem_to_reg),
+        .EX_reg_write(EX_reg_write),
+        
+        // Data from Execute
+        .EX_alu_result(EX_alu_result),
+        .EX_write_data(EX_write_data),
+        .EX_rd(EX_rd),
+        .EX_pc_plus_4(EX_pc_plus_4),
+        .EX_zero_flag(EX_zero_flag),
+        
+        // Outputs to Memory
+        .MEM_mem_read(MEM_mem_read),
+        .MEM_mem_write(MEM_mem_write),
+        .MEM_mem_to_reg(MEM_mem_to_reg),
+        .MEM_reg_write(MEM_reg_write),
+        .MEM_alu_result(MEM_alu_result),
+        .MEM_write_data(MEM_write_data),
+        .MEM_rd(MEM_rd),
+        .MEM_pc_plus_4(MEM_pc_plus_4),
+        .MEM_zero_flag(MEM_zero_flag)
     );
 
     // TO-DO

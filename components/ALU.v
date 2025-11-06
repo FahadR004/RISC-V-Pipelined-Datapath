@@ -1,54 +1,38 @@
 module ALU #(
     parameter data_width = 32
 ) (
-    input [2:0] funct3, 
-    input [6:0] funct7,
-    input [1:0] alu_op,
+    input [3:0] alu_control,              // From ALU Control
     input [data_width-1:0] operand_A, 
     input [data_width-1:0] operand_B,
-    output reg [data_width-1:0] result
-    output zero_flag
+    
+    output reg [data_width-1:0] result,
+    output wire zero_flag
 );
 
-always (*) 
-    begin
-         case (alu_op)
-        2'b10: begin  // R-type 
-            case (funct3)
-                3'b000: begin  // add/sub
-                    if (funct7 == 7'b0000000)
-                        result = operand_A + operand_B;
-                    else if (funct7 == 7'b0100000) 
-                        result = operand_A - operand_B;
-                    else
-                        result = 32'b0;  // Default
-                end
-                3'b111: result = operand_A & operand_B;  // AND
-                3'b110: result = operand_A | operand_B;  // OR
-                3'b100: result = operand_A ^ operand_B;  // XOR
-                3'b001: result = operand_A << operand_B[4:0];  // SLL
-                3'b101: begin  // SRL/SRA
-                    if (funct7 == 7'b0000000)
-                        result = operand_A >> operand_B[4:0];  // SRL
-                    else
-                        result = $signed(operand_A) >>> operand_B[4:0];  // SRA
-                end
-                default: result = 32'b0;
-            endcase
-        end
-        
-        2'b00: begin  // lw, sw
-            result = operand_A + operand_B;
-        end
-        
-        2'b01: begin  // Branch instructions 
-            result = operand_A - operand_B;
-        end
-        
-        default: result = 32'b0;
-    endcase
-    end    
+    // ALU Control codes
+    localparam ALU_ADD  = 4'b0000;
+    localparam ALU_SUB  = 4'b0001;
+    localparam ALU_AND  = 4'b0010;
+    localparam ALU_OR   = 4'b0011;
+    localparam ALU_XOR  = 4'b0100;
+    localparam ALU_SLL  = 4'b0101;
+    localparam ALU_SRL  = 4'b0110;
+    localparam ALU_SRA  = 4'b0111;
 
-assign zero_flag = (result == 0);
+    always @(*) begin
+        case (alu_control)
+            ALU_ADD: result = operand_A + operand_B;
+            ALU_SUB: result = operand_A - operand_B;
+            ALU_AND: result = operand_A & operand_B;
+            ALU_OR:  result = operand_A | operand_B;
+            ALU_XOR: result = operand_A ^ operand_B;
+            ALU_SLL: result = operand_A << operand_B[4:0];
+            ALU_SRL: result = operand_A >> operand_B[4:0];
+            ALU_SRA: result = $signed(operand_A) >>> operand_B[4:0];
+            default: result = {data_width{1'b0}};
+        endcase
+    end
+
+    assign zero_flag = (result == {data_width{1'b0}});
 
 endmodule
