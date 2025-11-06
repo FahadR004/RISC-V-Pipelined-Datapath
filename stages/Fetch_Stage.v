@@ -4,8 +4,7 @@ module Fetch #(
 ) (
     input clk,
     input reset,
-    input wire stall,           // From Hazard Unit
-    input wire flush,           // From Hazard Unit (for branches)
+    input wire pc_write,           // From Hazard Unit 
     input wire [address_width-1:0] branch_target,  // From MEM stage
     input wire pc_src,          // From MEM stage (branch taken signal)
 
@@ -28,9 +27,8 @@ PC_Register #(
 ) pc_reg (
     .clk(clk),
     .reset(reset),
-    .stall(stall),
+    .pc_write(pc_write),
     .next_pc(next_pc),
-    .flush(flush),
     .pc_current(pc_current)
 );
 

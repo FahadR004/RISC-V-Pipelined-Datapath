@@ -11,12 +11,21 @@ module RISC_V_Pipeline #(
 );
 
     // STAGE-WISE OUTPUT DECLARATIONS
+    // Fetch Stage Input 
+    wire pc_write; // From HDU as well
+    wire [address_width-1:0] branch_target;
+    wire pc_src;
+
     // Fetch Stage Output
     wire [address_width-1:0] IF_pc_plus_4;
     wire [address_width-1:0] IF_pc_current;
     wire [data_width-1:0] IF_instruction;
 
-    // IF-ID Register Output
+    // IF-ID Register Input
+    wire if_id_write; // From HDU as well
+    wire if_id_flush;
+
+    // IF-ID Register 
     wire [address_width-1:0] ID_pc_plus_4;
     wire [address_width-1:0] ID_pc_current;
     wire [data_width-1:0] ID_instruction;
@@ -55,6 +64,10 @@ module RISC_V_Pipeline #(
         wire [6:0] ID_funct7;
         wire [2:0] ID_funct3;
 
+    // ID/EX Register Input
+    wire control_mux_select;
+    wire id_ex_flush;
+
     // ID/EX Register 
     wire EX_alu_src;
     wire [1:0] EX_alu_op;
@@ -73,18 +86,14 @@ module RISC_V_Pipeline #(
     wire [address_width-1:0] EX_pc_plus_4;
     wire [address_width-1:0] EX_pc_current;
     wire [6:0] EX_funct7;
-    wire [2:0] EX_funct3;
+    wire [2:0] EX_funct3;    
 
     // TEMP ------------- TODO LATER
-    wire stall;
-    wire flush;
-    wire pc_src;
-    wire [address_width-1:0] branch_target;
     wire wb_reg_write;
     wire [reg_addr_width-1:0] wb_write_addr;
     wire [data_width-1:0] wb_write_data;
-    assign stall = 1'b0; // TEMP - WILL BE REMOVED
-    assign flush = 1'b0;
+    assign if_id_flush = 1'b0;
+    assign id_ex_flush = 1'b0;
     assign pc_src = 1'b0;
     assign branch_target = {address_width{1'b0}};
     assign wb_reg_write = 1'b0;
@@ -92,7 +101,7 @@ module RISC_V_Pipeline #(
     assign wb_write_data = {data_width{1'b0}};
 
     // Execution Stage Output
-
+    wire ex_branch_taken;
 
     // Memory Stage Output
 
@@ -106,7 +115,7 @@ module RISC_V_Pipeline #(
     ) fetch (
         .clk(clk),
         .reset(reset),
-        .stall(stall),
+        .pc_write(pc_write),
         .branch_target(branch_target),
         .pc_src(pc_src),
         .pc_plus_4(IF_pc_plus_4),
@@ -121,8 +130,8 @@ module RISC_V_Pipeline #(
     ) if_id_reg (
         .clk(clk),
         .reset(reset),
-        .stall(stall),
-        .flush(flush),
+        .if_id_write(if_id_write),
+        .flush(if_id_flush),
         .IF_pc_plus_4(IF_pc_plus_4),
         .IF_pc_current(IF_pc_current), 
         .IF_instruction(IF_instruction),
@@ -175,8 +184,8 @@ module RISC_V_Pipeline #(
     ) id_ex_reg (
         .clk(clk),
         .reset(reset),
-        .stall(stall),
-        .flush(flush),
+        .flush(id_ex_flush),
+        .control_mux_select(control_mux_select),
         
         // Inputs from Decode
         .ID_alu_src(ID_alu_src),
@@ -217,13 +226,52 @@ module RISC_V_Pipeline #(
         .EX_funct3(EX_funct3)
     );
 
-    // TODO
-    
-    // Execute_Stage execute();
+    // ----------------- HAZARD DETECTION UNIT -----------------
+    Hazard_Detection_Unit #(
+        .reg_addr_width(reg_addr_width)
+    ) hdu (
+        // Inputs 
+        .ID_rs1(ID_rs1),
+        .ID_rs2(ID_rs2),
+        .EX_mem_read(EX_mem_read),
+        .EX_rd(EX_rd),
 
-    // EX_MEM EX_MEM();
+        // Outputs
+        .pc_write(pc_write),
+        .if_id_write(if_id_write),
+        .control_mux_select(control_mux_select),
+        .if_id_flush(if_id_flush),
+        .ex_branch_taken(ex_branch_taken)
+    );
+
+
+    // ----------------- EXECUTION STAGE -----------------
+    Execute_Stage #(
+       .data_width(data_width),               
+       .address_width(address_width),         
+       .reg_addr_width(reg_addr_width),       
+       .total_regs(total_regs)     
+    ) execute (
+        // Inputs
+        
+
+
+        // Outputs
+
+    );
+
+    // ----------------- EX/MEM PIPELINE REGISTER -----------------
+
+    EX_MEM_Register  #(
+        
+    ) ex_mem_reg (
+
+    );
+
+    // TO-DO
     
     // Memory_Stage memory();
+    
 
     // MEM_WB MEM_WB();
     
