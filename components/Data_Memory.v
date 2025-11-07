@@ -12,7 +12,7 @@ module Data_Memory #(
     output reg [data_width-1:0] read_data
 );
 
-localparam depth = 2**(address_width-2); // 2^12/2^10 = 1024 words
+localparam depth = 2**(address_width-2); // 2^12/2^2 = 2^10 = 1024 words
 reg [data_width-1:0] memory_block [0:depth-1]; 
 
 always @ (posedge clk) 

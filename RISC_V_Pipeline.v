@@ -302,6 +302,8 @@ module RISC_V_Pipeline #(
         .alu_result(EX_alu_result),
         .write_data(EX_write_data),
         .zero_flag(EX_zero_flag),
+
+        // BRANCH LOGIC TO BE FIXED ALONG WITH IMMEDIATE GENERATOR VALUE
         .branch_taken(EX_branch_taken),
         .branch_target(EX_branch_target)
     );

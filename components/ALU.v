@@ -18,18 +18,22 @@ module ALU #(
     localparam ALU_SLL  = 4'b0101;
     localparam ALU_SRL  = 4'b0110;
     localparam ALU_SRA  = 4'b0111;
+    localparam ALU_SLT  = 4'b1000;
+    localparam ALU_SLTU = 4'b1001;
 
     always @(*) begin
         case (alu_control)
-            ALU_ADD: result = operand_A + operand_B;
-            ALU_SUB: result = operand_A - operand_B;
-            ALU_AND: result = operand_A & operand_B;
-            ALU_OR:  result = operand_A | operand_B;
-            ALU_XOR: result = operand_A ^ operand_B;
-            ALU_SLL: result = operand_A << operand_B[4:0];
-            ALU_SRL: result = operand_A >> operand_B[4:0];
-            ALU_SRA: result = $signed(operand_A) >>> operand_B[4:0];
-            default: result = {data_width{1'b0}};
+            ALU_ADD:  result = operand_A + operand_B;
+            ALU_SUB:  result = operand_A - operand_B;
+            ALU_AND:  result = operand_A & operand_B;
+            ALU_OR:   result = operand_A | operand_B;
+            ALU_XOR:  result = operand_A ^ operand_B;
+            ALU_SLL:  result = operand_A << operand_B[4:0];
+            ALU_SRL:  result = operand_A >> operand_B[4:0];
+            ALU_SRA:  result = $signed(operand_A) >>> operand_B[4:0];
+            ALU_SLT:  result = ($signed(operand_A) < $signed(operand_B)) ? 1 : 0;
+            ALU_SLTU: result = (operand_A < operand_B) ? 1 : 0;
+            default:  result = {data_width{1'b0}};
         endcase
     end
 
