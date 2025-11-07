@@ -18,6 +18,7 @@ module EX_MEM_Register #(
     input [data_width-1:0] EX_write_data,       // For stores
     input [reg_addr_width-1:0] EX_rd,
     input [address_width-1:0] EX_pc_plus_4,
+    input EX_rs2,
     input EX_zero_flag,
     
     // Control signals to Memory
@@ -31,6 +32,7 @@ module EX_MEM_Register #(
     output reg [data_width-1:0] MEM_write_data,
     output reg [reg_addr_width-1:0] MEM_rd,
     output reg [address_width-1:0] MEM_pc_plus_4,
+    output reg [reg_addr_width-1:0] MEM_rs2,   
     output reg MEM_zero_flag
 );
 
@@ -45,6 +47,7 @@ module EX_MEM_Register #(
             MEM_write_data <= {data_width{1'b0}};
             MEM_rd <= {reg_addr_width{1'b0}};
             MEM_pc_plus_4 <= {address_width{1'b0}};
+            MEM_rs2 <= {reg_addr_width{1'b0}};     
             MEM_zero_flag <= 1'b0;
         end
         else begin
@@ -57,6 +60,7 @@ module EX_MEM_Register #(
             MEM_write_data <= EX_write_data;
             MEM_rd <= EX_rd;
             MEM_pc_plus_4 <= EX_pc_plus_4;
+            MEM_rs2 <= EX_rs2;
             MEM_zero_flag <= EX_zero_flag;
         end
     end

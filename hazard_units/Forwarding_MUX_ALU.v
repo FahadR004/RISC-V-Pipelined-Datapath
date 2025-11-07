@@ -1,11 +1,11 @@
-module Forwarding_MUX #(
+module Forwarding_MUX_ALU #(
     parameter data_width = 32;
 ) (
   input forward_value, // A or B. For selection
   // Between the following inputs
-  input original_data,
-  input mem_data,
-  input wb_data,
+  input [data_width-1:0] original_data,
+  input [data_width-1:0] mem_data,
+  input [data_width-1:0] wb_data,
   // Output
   output reg [data_width-1:0] alu_operand 
 );

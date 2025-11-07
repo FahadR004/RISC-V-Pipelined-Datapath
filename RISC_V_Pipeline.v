@@ -109,24 +109,39 @@ module RISC_V_Pipeline #(
     wire [reg_addr_width-1:0] MEM_rd;
     wire [address_width-1:0] MEM_pc_plus_4;
     wire MEM_zero_flag;
-    
-    // TEMP ------------- TODO LATER
     wire ex_mem_flush;
-    assign ex_mem_flush = EX_branch_taken;  
-
-    wire wb_reg_write;
-    wire [reg_addr_width-1:0] wb_write_addr;
-    wire [data_width-1:0] wb_write_data;
+    
+    // Branch and Flush Control
     assign if_id_flush = EX_branch_taken;
     assign id_ex_flush = EX_branch_taken;
+    assign ex_mem_flush = EX_branch_taken;
+
+    // PC Control
     assign pc_src = EX_branch_taken;
     assign branch_target = EX_branch_target;
-    assign wb_reg_write = 1'b0;
-    assign wb_write_addr = {reg_addr_width{1'b0}};
-    assign wb_write_data = {data_width{1'b0}};
+    
+    // wire wb_reg_write;
+    // wire [reg_addr_width-1:0] wb_write_addr;
+    // wire [data_width-1:0] wb_write_data;
+    // assign if_id_flush = EX_branch_taken;
+    // assign id_ex_flush = EX_branch_taken;
+    // assign pc_src = EX_branch_taken;
+    // assign branch_target = EX_branch_target;
 
     // Memory Stage Output
+    wire [reg_addr_width-1:0] MEM_rs2;
+    wire [data_width-1:0] mem_read_data;
 
+    // MEM/WB Register Outputs
+    wire WB_mem_to_reg;
+    wire WB_reg_write;
+    wire [data_width-1:0] WB_alu_result;
+    wire [data_width-1:0] WB_mem_data;
+    wire [reg_addr_width-1:0] WB_rd;
+    wire [address_width-1:0] WB_pc_plus_4;
+
+    // WriteBack Stage Output
+    wire [data_width-1:0] WB_write_data;  
 
     // Write Back Stage Output
 
@@ -174,9 +189,9 @@ module RISC_V_Pipeline #(
         .instruction(ID_instruction),
         .pc_plus_4(ID_pc_plus_4),
         .pc_current(ID_pc_current),
-        .wb_reg_write(wb_reg_write),
-        .wb_write_addr(wb_write_addr),
-        .wb_write_data(wb_write_data),
+        .wb_reg_write(WB_reg_write),
+        .wb_write_addr(WB_rd),
+        .wb_write_data(WB_write_data),
         
         // Outputs
         .alu_src(ID_alu_src),
@@ -257,15 +272,13 @@ module RISC_V_Pipeline #(
         .ID_rs2(ID_rs2),
         .EX_mem_read(EX_mem_read),
         .EX_rd(EX_rd),
+        .EX_branch_taken(EX_branch_taken),
 
         // Outputs
         .pc_write(pc_write),
         .if_id_write(if_id_write),
-        .control_mux_select(control_mux_select),
-        .if_id_flush(if_id_flush),
-        .ex_branch_taken(ex_branch_taken)
+        .control_mux_select(control_mux_select)
     );
-
 
     // ----------------- EXECUTION STAGE -----------------
     Execute_Stage #(
@@ -294,9 +307,9 @@ module RISC_V_Pipeline #(
         .MEM_alu_result(MEM_alu_result),
         
         // Forwarding inputs from WB stage
-        .WB_rd(wb_write_addr),
-        .WB_reg_write(wb_reg_write),
-        .WB_write_data(wb_write_data),
+        .WB_rd(WB_rd),
+        .WB_reg_write(WB_reg_write),
+        .WB_write_data(WB_write_data),
         
         // Outputs
         .alu_result(EX_alu_result),
@@ -328,6 +341,7 @@ module RISC_V_Pipeline #(
         .EX_alu_result(EX_alu_result),
         .EX_write_data(EX_write_data),
         .EX_rd(EX_rd),
+        .EX_rs2(EX_rs2),
         .EX_pc_plus_4(EX_pc_plus_4),
         .EX_zero_flag(EX_zero_flag),
         
@@ -339,16 +353,71 @@ module RISC_V_Pipeline #(
         .MEM_alu_result(MEM_alu_result),
         .MEM_write_data(MEM_write_data),
         .MEM_rd(MEM_rd),
+        .MEM_rs2(MEM_rs2),
         .MEM_pc_plus_4(MEM_pc_plus_4),
         .MEM_zero_flag(MEM_zero_flag)
     );
 
-    // TO-DO
-    
-    // Memory_Stage memory();
+    Memory_Stage #(
+    .data_width(data_width),
+    .address_width(address_width),
+    .reg_addr_width(reg_addr_width)
+    ) memory (
+        // Input
+        .clk(clk),
+        .mem_write(MEM_mem_write),
+        .mem_address(MEM_alu_result),
+        .MEM_write_data(MEM_write_data),
+        .MEM_rs2(MEM_rs2),
+        .WB_rd(WB_rd),                          // From MEM/WB register
+        .WB_reg_write(WB_reg_write),            // From MEM/WB register
+        .WB_write_data(WB_write_data),          // From WriteBack stage
+        // Output
+        .mem_read_data(mem_read_data)
+    );
+
+    // ----------------- MEM/WB PIPELINE REGISTER -----------------
+    MEM_WB_Register #(
+        .data_width(data_width),
+        .address_width(address_width),
+        .reg_addr_width(reg_addr_width)
+    ) mem_wb_reg (
+        .clk(clk),
+        .reset(reset),
+        
+        // Control signals from Memory
+        .MEM_mem_to_reg(MEM_mem_to_reg),
+        .MEM_reg_write(MEM_reg_write),
+        
+        // Data from Memory
+        .MEM_alu_result(MEM_alu_result),
+        .MEM_mem_data(mem_read_data),           // Output from Memory Stage
+        .MEM_rd(MEM_rd),
+        .MEM_pc_plus_4(MEM_pc_plus_4),
+        
+        // Outputs to WriteBack
+        .WB_mem_to_reg(WB_mem_to_reg),
+        .WB_reg_write(WB_reg_write),
+        .WB_alu_result(WB_alu_result),
+        .WB_mem_data(WB_mem_data),
+        .WB_rd(WB_rd),
+        .WB_pc_plus_4(WB_pc_plus_4)
+    );
+
+    // ----------------- WRITEBACK STAGE -----------------
+    WriteBack_Stage #(
+        .data_width(data_width)
+    ) writeback (
+        .mem_to_reg(WB_mem_to_reg),
+        .alu_result(WB_alu_result),
+        .mem_data(WB_mem_data),
+        .write_data(WB_write_data)              // Goes Register File
+    );
     
 
     // MEM_WB MEM_WB();
+
+    // TO-DO
     
     // WriteBack_Stage writeback();
 

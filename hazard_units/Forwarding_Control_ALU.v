@@ -1,4 +1,4 @@
-module Forwarding_Control (
+module Forwarding_Control_ALU (
     // From EX_MEM to ALU 
     input ex_hazard_rs1,      
     input ex_hazard_rs2,   

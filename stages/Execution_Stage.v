@@ -82,7 +82,7 @@ module Execute_Stage #(
     );
     
     // Forwarding Control Unit
-    Forwarding_Control forward_ctrl (
+    Forwarding_Control_ALU forward_ctrl (
         .ex_hazard_rs1(ex_hazard_rs1),
         .ex_hazard_rs2(ex_hazard_rs2),
         .mem_hazard_rs1(mem_hazard_rs1),
@@ -92,7 +92,7 @@ module Execute_Stage #(
     );
     
     // Forwarding Multiplexer for Operand A
-    Forwarding_MUX #(
+    Forwarding_MUX_ALU #(
         .data_width(data_width)
     ) fwd_mux_A (
         .forward_value(forward_A),
