@@ -273,6 +273,7 @@ module RISC_V_Pipeline #(
         .ID_rs1(ID_rs1),
         .ID_rs2(ID_rs2),
         .EX_mem_read(EX_mem_read),
+        .EX_reg_write(EX_reg_write), 
         .EX_rd(EX_rd),
         .EX_branch_taken(EX_branch_taken),
 
