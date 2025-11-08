@@ -142,15 +142,16 @@ module Execute_Stage #(
     );
     
     //  BRANCH LOGIC
-    // TO BE FIXED ALONG WITH IMMEDIATE GENERATOR VALUE
     Branch_Unit #(
-        .address_width(address_width)
+        .address_width(address_width),
+        .data_width(data_width)
     ) branch_unit (
         .pc_current(pc_current),
         .immediate(immediate),
         .branch_signal(branch),
-        .zero_flag(zero_flag),
         .funct3(funct3),
+        .operand_A(forwarded_A),        
+        .operand_B(forwarded_B),        
         .branch_taken(branch_taken),
         .branch_target(branch_target)
     );
