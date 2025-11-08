@@ -1,7 +1,8 @@
 module Memory_Stage #(
     parameter data_width = 32,
-    parameter address_width = 12,
-    parameter reg_addr_width = 5
+    parameter address_width = 32,
+    parameter reg_addr_width = 5,
+    parameter mem_size_kb = 4
 ) (
     // Input
     input clk,
@@ -46,7 +47,8 @@ assign write_data = forward_C ? WB_write_data : MEM_write_data;
 
 Data_Memory #(
     .data_width(data_width),
-    .address_width(address_width)
+    .address_width(address_width),
+    .mem_size_kb(mem_size_kb)
 ) data_mem(
     .clk(clk),
     .mem_write(mem_write),

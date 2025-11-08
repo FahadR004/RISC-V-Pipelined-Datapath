@@ -1,6 +1,6 @@
 module Execute_Stage #(
     parameter data_width = 32,
-    parameter address_width = 12,
+    parameter address_width = 32,
     parameter reg_addr_width = 5
 ) (
     // Control signals from ID/EX

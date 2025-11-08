@@ -1,6 +1,6 @@
 module IF_ID_Register #(
     parameter data_width = 32,
-    parameter address_width = 12
+    parameter address_width = 32
 ) (
     input clk,
     input reset,

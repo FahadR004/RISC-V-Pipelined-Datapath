@@ -1,12 +1,12 @@
 module PC_Register #(
-    parameter address_width = 12
+    parameter address_width = 32
 ) (
     input clk,
     input reset,
     input pc_write,                              // From Hazard Unit
-    input [address_width-1:0] next_pc,        // Next PC value
+    input [address_width-1:0] next_pc,        // Next PC value (Byte Address)
     
-    output reg [address_width-1:0] pc_current // Current PC value
+    output reg [address_width-1:0] pc_current // Current PC value (Byte Address)
 );
 
     always @(posedge clk or posedge reset) begin

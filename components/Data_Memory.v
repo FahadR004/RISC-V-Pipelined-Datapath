@@ -1,6 +1,7 @@
 module Data_Memory #(
     parameter address_width = 12,
-    parameter data_width = 32
+    parameter data_width = 32,
+    parameter mem_size_kb = 4 
 )(
     input clk,
     input mem_write,
@@ -12,15 +13,20 @@ module Data_Memory #(
     output reg [data_width-1:0] read_data
 );
 
-localparam depth = 2**(address_width-2); // 2^12/2^2 = 2^10 = 1024 words
-reg [data_width-1:0] memory_block [0:depth-1]; 
+// Explained in Instruction Memory
+localparam depth = (mem_size_kb * 1024) / 4;
+localparam addr_bits_used = $clog2(depth);
+
+// Byte-to-Word Conversion
+wire [addr_bits_used-1:0] word_addr;
+assign word_addr = mem_address[addr_bits_used+1:2];
 
 always @ (posedge clk) 
     begin
         if (mem_write) // Byte-Word Conversion 
-            memory_block[address[address_width-1:2]] <= write_data; // Write Data
+            memory_block[word_addr] <= write_data; // Write Data
         else 
-            read_data <= memory_block[address[address_width-1:2]];  // Read Data      
+            read_data <= memory_block[word_addr];  // Read Data      
     end
     
 endmodule

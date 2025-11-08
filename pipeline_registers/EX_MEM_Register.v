@@ -1,6 +1,6 @@
 module EX_MEM_Register #(
     parameter data_width = 32,
-    parameter address_width = 12,
+    parameter address_width = 32,
     parameter reg_addr_width = 5
 ) (
     input clk,

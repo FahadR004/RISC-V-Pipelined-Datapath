@@ -1,6 +1,7 @@
-module Fetch #(
+module Fetch_Stage #(
     parameter data_width = 32,
-    parameter address_width = 12
+    parameter address_width = 32,
+    parameter mem_size_kb = 4
 ) (
     input clk,
     input reset,
@@ -33,10 +34,11 @@ PC_Register #(
 );
 
 // I have defined word memory but it will expect a byte address. Conversion will occur internally
-Instruction_Memory inst_mem #(
+Instruction_Memory #(
     .address_width(address_width),
-    .data_width(data_width)
-) (
+    .data_width(data_width),
+    .mem_size_kb(mem_size_kb)
+) inst_mem  (
     .address(pc_current), // This is the current value being passed. Updated in next clock cycle
     .instruction(instruction)
 )

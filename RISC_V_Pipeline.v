@@ -2,9 +2,10 @@
 
 module RISC_V_Pipeline #(
     parameter data_width = 32,
-    parameter address_width = 12,
+    parameter address_width = 32,
     parameter reg_addr_width = 5,
-    parameter total_regs = 32
+    parameter total_regs = 32,
+    parameter mem_size_kb = 4
 ) (
     input clk,
     input reset
@@ -148,7 +149,8 @@ module RISC_V_Pipeline #(
     // ----------------- FETCH MODULE --------------------
      Fetch_Stage #(
         .data_width(data_width),
-        .address_width(address_width)
+        .address_width(address_width),
+        .mem_size_kb(mem_size_kb)
     ) fetch (
         .clk(clk),
         .reset(reset),
@@ -361,7 +363,8 @@ module RISC_V_Pipeline #(
     Memory_Stage #(
     .data_width(data_width),
     .address_width(address_width),
-    .reg_addr_width(reg_addr_width)
+    .reg_addr_width(reg_addr_width),
+    .mem_size_kb(mem_size_kb)
     ) memory (
         // Input
         .clk(clk),
@@ -414,11 +417,4 @@ module RISC_V_Pipeline #(
         .write_data(WB_write_data)              // Goes Register File
     );
     
-
-    // MEM_WB MEM_WB();
-
-    // TO-DO
-    
-    // WriteBack_Stage writeback();
-
 endmodule

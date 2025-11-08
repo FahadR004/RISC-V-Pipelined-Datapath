@@ -1,0 +1,86 @@
+`timescale 1ns/1ps
+
+module Fetch_tb;
+
+    parameter DATA_WIDTH = 32;
+    parameter ADDR_WIDTH = 12;
+
+    // Inputs
+    reg clk;
+    reg reset;
+    reg pc_write;
+    reg [ADDR_WIDTH-1:0] branch_target;
+    reg pc_src;
+
+    // Outputs
+    wire [ADDR_WIDTH-1:0] pc_plus_4;
+    wire [DATA_WIDTH-1:0] instruction;
+    wire [ADDR_WIDTH-1:0] pc_current;
+
+    Fetch #(
+        .data_width(DATA_WIDTH),
+        .address_width(ADDR_WIDTH)
+    ) uut (
+        .clk(clk),
+        .reset(reset),
+        .pc_write(pc_write),
+        .branch_target(branch_target),
+        .pc_src(pc_src),
+        .pc_plus_4(pc_plus_4),
+        .instruction(instruction),
+        .pc_current(pc_current)
+    );
+
+    always #5 clk = ~clk;
+
+    // Initializing Instruction Memory contents
+    initial begin
+        // Directly access internal memory of Instruction_Memory module
+        uut.inst_mem.memory_block[0] = 32'h11111111;
+        uut.inst_mem.memory_block[1] = 32'h22222222;
+        uut.inst_mem.memory_block[2] = 32'h33333333;
+        uut.inst_mem.memory_block[3] = 32'h44444444;
+        uut.inst_mem.memory_block[4] = 32'h55555555;
+    end
+
+    // Test sequence
+    initial begin
+        // Initialize inputs
+        clk = 0;
+        reset = 1;
+        pc_write = 1;
+        pc_src = 0;
+        branch_target = 0;
+
+        // Applying reset
+        #10 reset = 0;
+
+        // ====== TEST CASE 1: Normal sequential execution ======
+        // Expect PC: 0 → 4 → 8 → 12, instruction increments accordingly
+        #50;
+
+        // ====== TEST CASE 2: Branch taken ======
+        // Jump to instruction memory index 3 (address = 3 * 4 = 12)
+        pc_src = 1;
+        branch_target = 12;
+        #10 pc_src = 0; // after one cycle, disable branch
+        #20;
+
+        // ====== TEST CASE 3: Hazard Stall (pc_write = 0) ======
+        // Expect PC to freeze
+        pc_write = 0;
+        #30;
+        pc_write = 1;  // Resume PC updates
+        #30;
+
+        // End simulation
+        $stop;
+    end
+
+    // Monitor output
+    initial begin
+        $monitor("Time=%0t | PC=%0d | Instr=%h | PC+4=%0d | pc_write=%b | pc_src=%b",
+                 $time, pc_current, instruction, pc_plus_4, pc_write, pc_src);
+    end
+
+endmodule
