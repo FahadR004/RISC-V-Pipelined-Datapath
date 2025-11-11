@@ -5,7 +5,7 @@ module Instruction_Memory #(
 )(    
     input [address_width-1:0] address, // 32-bit address
         
-    output reg [data_width-1:0] instruction // 32-bit instruction
+    output [data_width-1:0] instruction // 32-bit instruction
 );
 // We want memory to be in KB because of hardware limitations
 localparam depth = (mem_size_kb*1024)/4;

@@ -15,7 +15,6 @@ module Fetch_Stage #(
 );
 
 wire [address_width-1:0] next_pc;
-wire [address_width-1:0] pc_current;
 
 // PC_MUX
 // If 1, we jump to branch target else, we perform sequential execution.
@@ -41,7 +40,7 @@ Instruction_Memory #(
 ) inst_mem  (
     .address(pc_current), // This is the current value being passed. Updated in next clock cycle
     .instruction(instruction)
-)
+);
 
     
 endmodule

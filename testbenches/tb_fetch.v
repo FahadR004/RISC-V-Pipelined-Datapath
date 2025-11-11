@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module Fetch_Stage_TB;
+module tb_fetch;
 
     // Parameters
     parameter data_width = 32;
@@ -17,6 +17,9 @@ module Fetch_Stage_TB;
     wire [address_width-1:0] pc_plus_4;
     wire [address_width-1:0] pc_current;
     wire [data_width-1:0] instruction;
+
+    integer i;
+    reg [address_width-1:0] pc_before_stall;
 
     // Instantiate Fetch Stage
     Fetch_Stage #(
@@ -63,7 +66,7 @@ module Fetch_Stage_TB;
         $display("------------------------");
         #(CLK_PERIOD);
         reset = 0;
-        #(CLK_PERIOD);
+        @(negedge clk);  // Check at negative edge after reset release
         
         if (pc_current == 32'h00000000 && pc_plus_4 == 32'h00000004) begin
             $display("✓ PASS: PC initialized to 0x00000000");
@@ -77,13 +80,12 @@ module Fetch_Stage_TB;
         // Test 2: Sequential fetch (normal operation)
         $display("Test 2: Sequential Fetch");
         $display("------------------------");
-        pc_write = 1;
-        pc_src = 0;
         
-        repeat(4) begin
-            #(CLK_PERIOD);
-            $display("Cycle: PC = 0x%h, Instruction = 0x%h, PC+4 = 0x%h", 
-                     pc_current, instruction, pc_plus_4);
+        for (i = 0; i < 4; i = i + 1) begin
+            @(posedge clk);
+            #1;
+            $display("Cycle %0d: PC = 0x%h, Instruction = 0x%h, PC+4 = 0x%h", 
+                     i+1, pc_current, instruction, pc_plus_4);
         end
         
         if (pc_current == 32'h00000010) begin
@@ -97,15 +99,18 @@ module Fetch_Stage_TB;
         // Test 3: PC stall (pc_write = 0)
         $display("Test 3: PC Stall (pc_write = 0)");
         $display("------------------------");
-        pc_write = 0;
-        #(CLK_PERIOD);
+        pc_before_stall = pc_current;
         
-        if (pc_current == 32'h00000010) begin
+        pc_write = 0;
+        @(posedge clk);
+        @(negedge clk);
+        
+        if (pc_current == pc_before_stall) begin
             $display("✓ PASS: PC correctly held during stall");
             $display("  PC = 0x%h (unchanged)", pc_current);
         end else begin
             $display("✗ FAIL: PC changed during stall");
-            $display("  Expected PC = 0x00000010, Got PC = 0x%h", pc_current);
+            $display("  Expected PC = 0x%h, Got PC = 0x%h", pc_before_stall, pc_current);
         end
         $display("");
         
@@ -113,13 +118,15 @@ module Fetch_Stage_TB;
         $display("Test 4: Resume After Stall");
         $display("------------------------");
         pc_write = 1;
-        #(CLK_PERIOD);
+        @(posedge clk);
+        @(negedge clk);
         
-        if (pc_current == 32'h00000014) begin
+        if (pc_current == (pc_before_stall + 4)) begin
             $display("✓ PASS: PC resumed after stall");
             $display("  PC = 0x%h", pc_current);
         end else begin
             $display("✗ FAIL: PC didn't resume correctly");
+            $display("  Expected PC = 0x%h, Got PC = 0x%h", pc_before_stall + 4, pc_current);
         end
         $display("");
         
@@ -128,7 +135,8 @@ module Fetch_Stage_TB;
         $display("------------------------");
         pc_src = 1;
         branch_target = 32'h00000100;
-        #(CLK_PERIOD);
+        @(posedge clk);
+        @(negedge clk);
         
         if (pc_current == 32'h00000100) begin
             $display("✓ PASS: Branch target correctly loaded");
@@ -143,7 +151,8 @@ module Fetch_Stage_TB;
         $display("Test 6: Sequential After Branch");
         $display("------------------------");
         pc_src = 0;
-        #(CLK_PERIOD);
+        @(posedge clk);
+        @(negedge clk);
         
         if (pc_current == 32'h00000104) begin
             $display("✓ PASS: Sequential execution resumed after branch");
@@ -162,20 +171,26 @@ module Fetch_Stage_TB;
         pc_write = 1;
         pc_src = 0;
         
-        #(CLK_PERIOD);
+        @(negedge clk);
+        
+        $display("PC = 0x%h", pc_current);
         if (instruction == 32'h00450293) begin
             $display("✓ PASS: Instruction memory read correctly");
             $display("  Address 0x00000000: Instruction = 0x%h", instruction);
         end else begin
             $display("✗ FAIL: Instruction memory read error");
+            $display("  Expected 0x00450293, Got 0x%h", instruction);
+            $display("  mem[0] = 0x%h", uut.inst_mem.memory_block[0]);
         end
         
-        #(CLK_PERIOD);
+        @(negedge clk);
+        
         if (instruction == 32'h00500313) begin
             $display("✓ PASS: Next instruction fetched correctly");
             $display("  Address 0x00000004: Instruction = 0x%h", instruction);
         end else begin
             $display("✗ FAIL: Next instruction fetch error");
+            $display("  Expected 0x00500313, Got 0x%h", instruction);
         end
         $display("");
         
@@ -187,8 +202,8 @@ module Fetch_Stage_TB;
 
     // Waveform dump
     initial begin
-        $dumpfile("fetch_stage_tb.vcd");
-        $dumpvars(0, Fetch_Stage_TB);
+        $dumpfile("build/fetch_stage_tb.vcd");
+        $dumpvars(0, tb_fetch);
     end
 
 endmodule
